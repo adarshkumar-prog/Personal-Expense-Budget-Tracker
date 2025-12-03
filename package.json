@@ -1,0 +1,20 @@
+{
+  "name": "personal-expense-and-budget-tracker",
+  "version": "1.0.0",
+  "description": "A project to maintain the expenses of any registered user and send them the alert when needed to remind them",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "author": "Adarsh Kumar jha",
+  "license": "ISC",
+  "dependencies": {
+    "auto-bind": "^4.0.0",
+    "bcrypt": "^6.0.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "nodemon": "^3.1.11"
+  }
+}
