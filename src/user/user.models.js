@@ -21,6 +21,12 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
+    'otp': {
+        type: String,
+    },
+    'otpExpiry': {
+        type: Date,
+    },
 }, { 'timestamps': true });
 
 userSchema.statics.generateToken = async function( user ) {
@@ -58,4 +64,5 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
+module.exports = User;
