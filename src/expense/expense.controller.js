@@ -36,6 +36,25 @@ class ExpenseController {
       res.status(400).json({ message: error.message });
     }
   }
+
+  async updateExpense(req, res, next) {
+    try {
+        const response = await this.service.updateExpense( req.params.id, new this.dto.AddExpenseRequestDTO({ ...req.body, userId: req.user.id }) );
+        response.data = new this.dto.ExpenseGetDTO(response.data);
+        return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async deleteExpense(req, res, next) {
+    try {
+        const response = await this.service.deleteExpense( req.params.id, req.user.id );
+        return res.status(200).json(response);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = new ExpenseController(expenseService);

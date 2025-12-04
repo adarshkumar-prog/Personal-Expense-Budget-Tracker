@@ -77,6 +77,62 @@ class ExpenseService {
       throw error;
     }
   }
+
+  async updateExpense(expenseId, expenseDTO) {
+    try {
+      const userId = expenseDTO.userId;
+      const expense = await this.expenseModel.findById(expenseId);
+      if (!expense) {
+        throw new Error("Expense not found");
+      }
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      if (!expense.userId.equals(user.id)) {
+        throw new Error("Unauthorized access");
+      }
+
+      const expenseData = await this.expenseModel.findByIdAndUpdate(
+        expenseId,
+        expenseDTO,
+        { new: true }
+      );
+      if (expenseData) {
+        return {
+          data: expenseData.toJSON(),
+          message: "Expense updated successfully",
+        };
+      }
+      throw new Error("Updating expense failed");
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteExpense(expenseId, userId) {
+    try {
+      const expense = await this.expenseModel.findById(expenseId);
+      if (!expense) {
+        throw new Error("Expense not found");
+      }
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      console.log(user);
+      if (!expense.userId.equals(user.id)) {
+        throw new Error("Unauthorized access");
+      }
+
+      await this.expenseModel.findByIdAndDelete(expenseId);
+      return {
+        message: "Expense deleted successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = new ExpenseService(ExpenseModel, userModel);
