@@ -27,6 +27,8 @@ class RegisterRequestDTO {
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.name = props.name;
         this.password = props.password;
+        this.otp = props.otp;
+        this.otpExpiry = props.otpExpiry;
 
         Object.keys(this).forEach( key => {
             if(this[key] === undefined) {
@@ -37,9 +39,19 @@ class RegisterRequestDTO {
     }
 }
 
+class GetDTO {
+    constructor( { ...props } ) {
+        this.id = props.id;
+        this.email = props.email ? props.email.toLowerCase() : undefined;
+        this.name = props.name;
+        Object.freeze(this);
+    }
+}
+
 module.exports = {
     InsertDTO,
     LoginRequestDTO,
     LoginResponseDTO,
     RegisterRequestDTO,
+    GetDTO,
 };
