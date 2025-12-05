@@ -92,7 +92,7 @@ Architecture	Feature-based modular structure
 📥 Installation & Setup
 1️⃣ Clone the repo
 git clone https://github.com/adarshkumar-prog/Personal-Expense---Budget-Tracker.git
-cd expense-tracker-backend
+cd Personal-Expense---Budget-Tracker
 
 2️⃣ Install dependencies
 npm install
