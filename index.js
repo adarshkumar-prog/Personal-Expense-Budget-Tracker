@@ -2,6 +2,7 @@ const express = require('express');
 const { connectToDatabase } = require('./connect');
 const userRoutes = require('./src/user/user.routes');
 const expenseRoutes = require('./src/expense/expense.route');
+const budgetRoutes = require('./src/budget/budget.route');
 
 const app = express();
 const port = 5001;
@@ -9,6 +10,7 @@ const port = 5001;
 app.use(express.json());
 app.use('/users', userRoutes);
 app.use('/expenses', expenseRoutes);
+app.use('/budgets', budgetRoutes);
 
 
 connectToDatabase('mongodb://localhost:27017/personal-expense-and-income-tracker').then(() => {
