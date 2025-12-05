@@ -91,7 +91,7 @@ Security	bcrypt
 Architecture	Feature-based modular structure
 📥 Installation & Setup
 1️⃣ Clone the repo
-git clone https://github.com/your-username/expense-tracker-backend.git
+git clone https://github.com/adarshkumar-prog/expense-tracker-backend.git
 cd expense-tracker-backend
 
 2️⃣ Install dependencies
