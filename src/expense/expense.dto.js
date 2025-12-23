@@ -2,7 +2,9 @@ class AddExpenseRequestDTO {
     constructor( { ...props } ) {
         this.amount = props.amount;
         this.category = props.category;
-        this.date = props.date;
+        this.day = props.day;
+        this.month = props.month;
+        this.year = props.year;
         this.description = props.description;
         this.userId = props.userId;
 

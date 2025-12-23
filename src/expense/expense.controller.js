@@ -30,7 +30,7 @@ class ExpenseController {
 
   async getMonthlyExpenses(req, res, next) {
     try {
-        const response = await this.service.getMonthlyExpenses( req.user.id, req.body.date );
+        const response = await this.service.getMonthlyExpenses( req.user.id, req.body.month, req.body.year );
         return res.status(200).json(response);
     } catch (error) {
       res.status(400).json({ message: error.message });

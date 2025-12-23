@@ -21,10 +21,17 @@ const expenseSchema = new Schema({
         type: String,
         default: '',
     },
-    'date' : {
-        type: Date,
+    'day' : {
+        type: Number,
         required: true,
-        default: Date.now,
+    },
+    'month' : {
+        type: String,
+        required: true,
+    },
+    'year' : {
+        type: Number,
+        required: true,
     }
 }, { 'timestamps': true });
 

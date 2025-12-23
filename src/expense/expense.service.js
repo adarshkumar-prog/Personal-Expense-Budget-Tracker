@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
 const ExpenseModel = require("../expense/expense.model");
 const userModel = require("../user/user.models");
+const budgetModel = require("../budget/budget.model");
+const { sendSMS } = require("../notification/index");
 const autoBind = require("auto-bind");
 
 class ExpenseService {
-  constructor(ExpenseModel, userModel) {
+  constructor(ExpenseModel, userModel, budgetModel, sendSMS) {
     this.expenseModel = ExpenseModel;
+    this.budgetModel = budgetModel;
     this.userModel = userModel;
+    this.sendSMS = sendSMS;
     autoBind(this);
   }
 
@@ -21,6 +25,22 @@ class ExpenseService {
         ...expenseDTO,
         userId: user.id,
       });
+      const budgetData = await this.budgetModel.findOne({ userId, month: expenseDTO.month, year: expenseDTO.year });
+      if (budgetData) {
+        if (budgetData.monthlyLimit < expenseDTO.amount) {
+          throw new Error("Expense amount exceeds the monthly budget limit");
+        }
+        if (budgetData.monthlyLimit === expenseDTO.amount) {
+          await sendSMS(
+            `+91${user.phone}`,
+            '🚨 Budget Alert: You have reached your expense limit');
+        }
+        budgetData.monthlyLimit -= expenseDTO.amount;
+        await budgetData.save();
+      }
+      else {
+        throw new Error("No budget set for this month and year");
+      }
       if (expenseData) {
         return {
           data: expenseData.toJSON(),
@@ -48,26 +68,11 @@ class ExpenseService {
     }
   }
 
-  async getMonthlyExpenses(userId, date) {
-    const month = {
-      month: date.month,
-      year: date.year,
-    };
+  async getMonthlyExpenses(userId, month, year) {
     try {
-      const startDate = new Date(month.year, month.month - 1, 1);
-      const endDate = new Date(month.year, month.month, 0);
-      endDate.setHours(23, 59, 59, 999);
-
       const expenses = await this.expenseModel
-        .find({
-          userId,
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        })
-        .sort({ date: -1 });
-
+        .find({ userId, month, year })
+        .sort({ createdAt: -1 });
       return {
         count: expenses.length,
         data: expenses,
@@ -91,6 +96,14 @@ class ExpenseService {
       }
       if (!expense.userId.equals(user.id)) {
         throw new Error("Unauthorized access");
+      }
+
+      const previousAmount = expense.amount;
+      const budgetData = await this.budgetModel.findOne({ userId, month: expense.month, year: expense.year });
+      if (budgetData) {
+        budgetData.monthlyLimit += previousAmount;
+        budgetData.monthlyLimit -= expenseDTO.amount;
+        await budgetData.save();
       }
 
       const expenseData = await this.expenseModel.findByIdAndUpdate(
@@ -124,6 +137,12 @@ class ExpenseService {
       if (!expense.userId.equals(user.id)) {
         throw new Error("Unauthorized access");
       }
+      const previousAmount = expense.amount;
+      const budgetData = await this.budgetModel.findOne({ userId, month: expense.month, year: expense.year });
+      if (budgetData) {
+        budgetData.monthlyLimit += previousAmount;
+        await budgetData.save();
+      }
 
       await this.expenseModel.findByIdAndDelete(expenseId);
       return {
@@ -135,4 +154,4 @@ class ExpenseService {
   }
 }
 
-module.exports = new ExpenseService(ExpenseModel, userModel);
+module.exports = new ExpenseService(ExpenseModel, userModel, budgetModel, { sendSMS });

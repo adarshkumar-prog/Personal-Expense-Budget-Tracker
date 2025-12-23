@@ -28,9 +28,9 @@ class BudgetController {
         }
     }
 
-    async updateBudget (req, res, next) {
+    async addMoreBudget (req, res, next) {
         try {
-            const response = await this.service.updateBudget( req.params.id, new this.dto.UpdateBudgetRequestDTO({ ...req.body }), req.user.id );
+            const response = await this.service.addMoreBudget( req.params.id, new this.dto.UpdateBudgetRequestDTO({ ...req.body }), req.user.id );
             response.data = new this.dto.BudgetGetDTO(response.data);
             return res.status(200).json(response);
         } catch (error) {
