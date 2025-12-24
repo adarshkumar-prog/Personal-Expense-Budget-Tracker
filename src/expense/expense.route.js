@@ -15,7 +15,4 @@ router.get('/average-monthly-expense', userController.checkLogin, expenseControl
 router.put('/updateExpense/:id', userController.checkLogin, expenseController.updateExpense);
 router.delete('/deleteExpense/:id', userController.checkLogin, expenseController.deleteExpense);
 
-// Highest spending month
-
-// Average monthly expense
 module.exports = router;

@@ -1,11 +1,13 @@
 const budgetModel = require('./budget.model');
 const userModel = require("../user/user.models");
+const expenseModel = require("../expense/expense.model");
 const autoBind = require('auto-bind');
 
 class BudgetService {
-    constructor(budgetModel, userModel) {
+    constructor(budgetModel, userModel, expenseModel) {
         this.budgetModel = budgetModel;
         this.userModel = userModel;
+        this.expenseModel = expenseModel;
         autoBind(this);
     }
     
@@ -53,6 +55,42 @@ class BudgetService {
             return {
                 data: budgetData,
                 message: 'Budget fetched successfully',
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async BudgetUsageByMonth (userId, month, year) {
+        try {
+            const response = {};
+            const user = await this.userModel.findById(userId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+            const budgetData = await this.budgetModel.findOne({ userId, month, year });
+            if(!budgetData) {
+                throw new Error('No budget found for this user for the specified month and year');
+            }
+            const expenses = await this.expenseModel.aggregate([
+                {
+                    $match: { userId: user._id, month: month, year: year }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalExpense: { $sum: "$amount" }
+                    }
+            }
+            ]);
+            const totalExpense = expenses.length > 0 ? expenses[0].totalExpense : 0;
+            response.TotalMonthlyLimit = budgetData.monthlyLimit + totalExpense;
+            response.UsedAmount = totalExpense;
+            response.RemainingAmount = budgetData.monthlyLimit;
+            response.PercentageUsed = ((totalExpense / response.TotalMonthlyLimit) * 100).toFixed(2);
+            return {
+                data: response,
+                message: 'Budget usage fetched successfully',
             };
         } catch (error) {
             throw error;
@@ -118,4 +156,4 @@ class BudgetService {
     }
 }
 
-module.exports = new BudgetService(budgetModel, userModel);
+module.exports = new BudgetService(budgetModel, userModel, expenseModel);
