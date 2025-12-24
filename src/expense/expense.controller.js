@@ -37,6 +37,22 @@ class ExpenseController {
     }
   }
 
+  async getExpensePDF(req, res, next) {
+  try {
+    const response = await this.service.getExpensePDF(req.user.id);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="expenses.pdf"'
+    );
+    res.setHeader('Content-Length', response.data.length);
+
+    return res.status(200).send(response.data);
+  } catch (error) {
+    next(error);
+  }
+}
   async updateExpense(req, res, next) {
     try {
         const response = await this.service.updateExpense( req.params.id, new this.dto.AddExpenseRequestDTO({ ...req.body, userId: req.user.id }) );
