@@ -73,7 +73,7 @@ class ExpenseService {
     }
   }
 
-  async getMonthlyExpenses(userId, month, year) {
+  async MonthlyExpenses(userId, month, year) {
     try {
       const expenses = await this.expenseModel
         .find({ userId, month, year })
@@ -82,6 +82,40 @@ class ExpenseService {
         count: expenses.length,
         data: expenses,
         message: "Monthly expenses fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async MonthlyExpenseAmount(userId, year, month) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+            month: String(month),
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]);
+
+      const totalAmount =
+        result.length > 0 ? result[0].totalAmount : 0;
+
+      return {
+        data: {
+          year: Number(year),
+          month: Number(month),
+          totalAmount: totalAmount,
+        },
+        message: "Monthly expense amount fetched successfully",
       };
     } catch (error) {
       throw error;
@@ -178,6 +212,130 @@ doc.moveDown();
 
     return { data: pdfBuffer };
   }
+
+  async HighestSpendingMonth(userId, year) {
+  try {
+    const result = await this.expenseModel.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          year: Number(year),
+        },
+      },
+      {
+        $group: {
+          _id: { month: "$month", year: "$year" },
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+      { $sort: { totalAmount: -1 } },
+      { $limit: 1 },
+    ]);
+
+    if (result.length === 0) {
+      return {
+        data: null,
+        message: "No expenses found for the user",
+      };
+    }
+
+    const highestSpending = result[0];
+
+    return {
+      data: {
+        month: highestSpending._id.month,
+        year: highestSpending._id.year,
+        totalAmount: highestSpending.totalAmount,
+      },
+      message: "Highest spending month fetched successfully",
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+async LowestSpendingMonth(userId, year) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+          },
+        },
+        {
+          $group: {
+            _id: { month: "$month", year: "$year" },
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        { $sort: { totalAmount: 1 } },
+        { $limit: 1 },
+      ]);
+
+      if (result.length === 0) {
+        return {
+          data: null,
+          message: "No expenses found for the user",
+        };
+      }
+
+      const lowestSpending = result[0];
+
+      return {
+        data: {
+          month: lowestSpending._id.month,
+          year: lowestSpending._id.year,
+          totalAmount: lowestSpending.totalAmount,
+        },
+        message: "Lowest spending month fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async AverageMonthlyExpense(userId, year) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+          },
+        },
+        {
+          $group: {
+            _id: "$month",
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            averageAmount: { $avg: "$totalAmount" },
+          },
+        },
+      ]);
+
+      if (result.length === 0) {
+        return {
+          data: null,
+          message: "No expenses found for the user",
+        };
+      }
+
+      return {
+        data: {
+          averageAmount: result[0].averageAmount,
+        },
+        message: "Average monthly expense fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
 
   async updateExpense(expenseId, expenseDTO) {
     try {
