@@ -13,7 +13,6 @@ class BudgetService {
         try {
             const userId = budgetDTO.userId;
             const loggedInUserId = loginUserId.toString();
-            console.log(loggedInUserId, userId);
             if(userId.toString() !== loggedInUserId) {
                 throw new Error('Unauthorized to set budget for this user');
             }
@@ -60,7 +59,7 @@ class BudgetService {
         }
     }
 
-    async updateBudget (id, budgetDTO, loginUserId) {
+    async addMoreBudget (id, budgetDTO, loginUserId) {
         try {
             const loggedInUserId = loginUserId.toString();
             if(budgetDTO.userId.toString() !== loggedInUserId) {

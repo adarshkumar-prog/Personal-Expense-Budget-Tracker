@@ -21,12 +21,20 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
+    'phone' : {
+        type: String,
+        required: true,
+        unique: true,
+    },
     'otp': {
         type: String,
     },
     'otpExpiry': {
         type: Date,
     },
+    'expoPushToken': {
+        type: String,
+    }
 }, { 'timestamps': true });
 
 userSchema.statics.generateToken = async function( user ) {

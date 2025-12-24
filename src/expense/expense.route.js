@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/addExpense', userController.checkLogin, expenseController.addExpense);
 router.get('/getExpenses', userController.checkLogin, expenseController.getExpenses);
 router.get('/monthly-expenses', userController.checkLogin, expenseController.getMonthlyExpenses);
+router.get('/get-pdf', userController.checkLogin, expenseController.getExpensePDF);
 router.put('/updateExpense/:id', userController.checkLogin, expenseController.updateExpense);
 router.delete('/deleteExpense/:id', userController.checkLogin, expenseController.deleteExpense);
 

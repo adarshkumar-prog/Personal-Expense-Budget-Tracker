@@ -29,6 +29,17 @@ class UserController {
         }
     }
 
+    async savePushToken(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const { pushToken } = req.body;
+            const response = await this.service.savePushToken( userId, pushToken );
+            return res.status(200).json(response);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
     async getProfile(req, res, next) {
         try {
             const user = req.user;

@@ -26,6 +26,7 @@ class RegisterRequestDTO {
     constructor(  { ...props } ) {
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.name = props.name;
+        this.phone = props.phone;
         this.password = props.password;
         this.otp = props.otp;
         this.otpExpiry = props.otpExpiry;

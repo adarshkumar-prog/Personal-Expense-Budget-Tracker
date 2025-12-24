@@ -1,13 +1,15 @@
 const mongoose = require('mongoose');
 const userModel = require('./user.models');
 const userTokenModel = require('./user.userTokenModel');
+const  { sendSMS } = require('../notification/index');
 const autoBind = require('auto-bind');
 
 
 class UserService {
-    constructor( userModel, userTokenModel ) {
+    constructor( userModel, userTokenModel, sendSMS ) {
         this.userModel = userModel;
         this.userTokenModel = userTokenModel;
+        this.sendSMS = sendSMS;
         autoBind(this);
     }
 
@@ -17,6 +19,10 @@ class UserService {
             const { data: existingUser } = await this.findByEmail( email );
             if( existingUser ) {
                 throw new Error('User with this email already exists');
+            }
+            const phoneExistingUser = await this.userModel.findOne({ phone: data.phone });
+            if( phoneExistingUser ) {
+                throw new Error('User with this phone number already exists');
             }
             const userData = await this.userModel.create( data );
             if( userData ) {
@@ -49,6 +55,19 @@ class UserService {
             }
         }
     }
+    async savePushToken ( userId, pushToken ) {
+        try {
+            const userData = await this.userModel.findById( userId );
+            if( !userData ) {
+                throw new Error('User not found');
+            }
+            userData.expoPushToken = pushToken;
+            await userData.save();
+            return { 'data' : userData.toJSON(), 'message' : 'Push token saved successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
 
     async getProfile( user ) {
         try {
@@ -65,7 +84,6 @@ class UserService {
     async requestPasswordReset( email ) {
         try {
             const { data } = await this.findByEmail( email );
-            console.log(data);
             if( !data ) {
                 throw new Error('User not found');
             }
@@ -74,7 +92,9 @@ class UserService {
             data.otp = otp;
             data.otpExpiry = otpExpiry;
             await data.save();
-            console.log('data after saving otp', data);
+            await sendSMS(
+                `+91${data.phone}`,
+                `Your password reset OTP is: ${otp}. It is valid for 15 minutes.`);
             return { otp: data.otp };
         } catch( error ) {
             throw error;
@@ -96,6 +116,9 @@ class UserService {
             data.password = newPassword;
             data.otp = undefined;
             data.otpExpiry = undefined;
+            await sendSMS(
+                `+91${data.phone}`,
+                `Your password has been successfully reset.`);
             await data.save();
             return { 'data' : data.toJSON() };
         } catch (error) {
@@ -115,6 +138,9 @@ class UserService {
             }
             userData.password = newPassword;
             await userData.save();
+            await sendSMS(
+                `+91${userData.phone}`,
+                `Your password has been successfully changed.`);
             return { 'data' : userData.toJSON() };
         } catch (error) {
             throw error;
@@ -167,4 +193,4 @@ class UserService {
     }
 }
 
-module.exports = new UserService( userModel, userTokenModel );
+module.exports = new UserService( userModel, userTokenModel, { sendSMS } );

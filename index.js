@@ -1,6 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const { connectToDatabase } = require('./connect');
-const userRoutes = require('./src/user/user.routes');
+const userRoutes = require('./src/user/user.routes.js');
 const expenseRoutes = require('./src/expense/expense.route');
 const budgetRoutes = require('./src/budget/budget.route');
 
