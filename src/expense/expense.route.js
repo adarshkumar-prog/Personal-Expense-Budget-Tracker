@@ -9,9 +9,12 @@ router.get('/getExpenses', userController.checkLogin, expenseController.getExpen
 router.get('/monthly-expenses', userController.checkLogin, expenseController.MonthlyExpenses);
 router.get('/monthly-expense-amount', userController.checkLogin, expenseController.MonthlyExpenseAmount);
 router.get('/get-pdf', userController.checkLogin, expenseController.getExpensePDF);
+router.get('/export/csv', userController.checkLogin, expenseController.exportExpensesToCSV);
 router.get('/highest-spending-month', userController.checkLogin, expenseController.HighestSpendingMonth);
 router.get('/lowest-spending-month', userController.checkLogin, expenseController.LowestSpendingMonth);
 router.get('/average-monthly-expense', userController.checkLogin, expenseController.AverageMonthlyExpense);
+router.get('/expenses/trend', userController.checkLogin, expenseController.ExpenseTrend);
+router.get('/analytics/category-summary', userController.checkLogin, expenseController.CategorySummary);
 router.put('/updateExpense/:id', userController.checkLogin, expenseController.updateExpense);
 router.delete('/deleteExpense/:id', userController.checkLogin, expenseController.deleteExpense);
 
