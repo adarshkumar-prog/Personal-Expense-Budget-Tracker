@@ -50,6 +50,39 @@ class UserController {
         }
     }
 
+    async updateProfile(req, res, next) {
+        try {
+            const user = req.user;
+            const updateData = new this.dto.UpdateProfileRequestDTO({ ...req.body });
+            const response = await this.service.updateProfile( user, updateData );
+            return res.status(200).json(new this.dto.GetDTO(response.data));
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async changeEmailRequest(req, res, next) {
+        try {
+            const user = req.user;
+            console.log(user);
+            const response = await this.service.changeEmailRequest( user );
+            return res.status(200).json(response);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async changeEmail(req, res, next) {
+        try {
+            const user = req.user;
+            const { newEmail, otp } = req.body;
+            const response = await this.service.changeEmail( user, newEmail, otp );
+            return res.status(200).json(new this.dto.GetDTO(response.data));
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
     async changePassword(req, res, next) {
         try {
             const user = req.user;

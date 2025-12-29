@@ -83,6 +83,67 @@ class UserService {
         }
     }
 
+    async updateProfile( user, updateData ) {
+        try {
+            const userData = await this.userModel.findByIdAndUpdate( user.id, updateData, { new: true } );
+            if( !userData ) {
+                throw new Error('User not found');
+            }
+            return { 'data' : userData.toJSON(), 'message' : 'Profile updated successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async changeEmailRequest( user ) {
+        try {
+            const userData = await this.userModel.findById( user.id );
+            if( !userData ) {
+                throw new Error('User not found');
+            }
+            const email = userData.email;
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+            userData.emailVerificationOtp = otp;
+            userData.emailVerificationOtpExpiry = otpExpiry;
+            await userData.save();
+            await sendOtpEmail(
+                email,
+                otp
+            );
+            return { otp: userData.emailVerificationOtp };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async changeEmail( user, newEmail, otp ) {
+        try {
+            const userData = await this.userModel.findById( user.id );
+            if( !userData ) {
+                throw new Error('User not found');
+            }
+            const existingEmailUser = await this.userModel.findOne({ email: newEmail });
+            if( existingEmailUser ) {
+                throw new Error('Email is already in use');
+            }
+            if( userData.emailVerificationOtp !== otp ) {
+                throw new Error('Invalid OTP');
+            }
+            if( userData.emailVerificationOtpExpiry < new Date() ) {
+                throw new Error('OTP has expired');
+            }
+            userData.email = newEmail;
+            userData.emailVerified = true;
+            userData.emailVerificationOtp = null;
+            userData.emailVerificationOtpExpiry = null;
+            await userData.save();
+            return { 'data' : userData.toJSON(), 'message' : 'Email changed successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async requestPasswordReset( email ) {
         try {
             const { data } = await this.findByEmail( email );
@@ -178,6 +239,7 @@ class UserService {
             if(tokenData.userId.toString() !== user.id) {
                 throw new Error('UNAUTHORIZED_ERROR');
             }
+            console.log('user', user);
             return user;
         } catch (error) {
             throw error;
