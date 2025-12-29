@@ -91,8 +91,8 @@ Security	bcrypt
 Architecture	Feature-based modular structure
 📥 Installation & Setup
 1️⃣ Clone the repo
-git clone https://github.com/adarshkumar-prog/Personal-Expense---Budget-Tracker.git
-cd Personal-Expense---Budget-Tracker
+git clone https://github.com/adarshkumar-prog/Personal-Expense-Budget-Tracker.git
+cd Personal-Expense-Budget-Tracker
 
 2️⃣ Install dependencies
 npm install
