@@ -111,7 +111,7 @@ npm run dev
 
 Backend will run on:
 
-http://localhost:5000
+http://localhost:5001
 
 🗂️ API Routes
 👤 User Routes
