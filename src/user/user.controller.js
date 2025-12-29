@@ -100,6 +100,26 @@ class UserController {
         }
     }
 
+    async sendEmailOtp(req, res, next) {
+        try {
+            const { email } = req.body;
+            const response = await this.service.sendEmailOtp( email );
+            return res.status(200).json(response);
+        } catch(error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async verifyEmail(req, res, next) {
+        try {
+            const { email, otp } = req.body;
+            const response = await this.service.verifyEmail( email, otp );
+            return res.status(200).json(response);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
     async logout(req, res, next) {
         try {
             const response = await this.service.logout( req.token );
