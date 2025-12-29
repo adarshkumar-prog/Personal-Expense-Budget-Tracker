@@ -239,7 +239,6 @@ class UserService {
             if(tokenData.userId.toString() !== user.id) {
                 throw new Error('UNAUTHORIZED_ERROR');
             }
-            console.log('user', user);
             return user;
         } catch (error) {
             throw error;

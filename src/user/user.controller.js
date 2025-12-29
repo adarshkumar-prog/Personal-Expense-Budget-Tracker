@@ -64,7 +64,6 @@ class UserController {
     async changeEmailRequest(req, res, next) {
         try {
             const user = req.user;
-            console.log(user);
             const response = await this.service.changeEmailRequest( user );
             return res.status(200).json(response);
         } catch (error) {
@@ -87,6 +86,7 @@ class UserController {
         try {
             const user = req.user;
             const { oldPassword, newPassword } = req.body;
+            console.log('oldPassword, newPassword', oldPassword, newPassword);
             const response = await this.service.changePassword( user, oldPassword, newPassword );
             return res.status(200).json(response.data.name + ' Your password has been changed successfully');
         } catch(error) {
