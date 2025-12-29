@@ -49,10 +49,25 @@ class GetDTO {
     }
 }
 
+class UpdateProfileRequestDTO {
+    constructor( { ...props } ) {
+        this.name = props.name;
+        this.phone = props.phone;
+
+        Object.keys(this).forEach( key => {
+            if(this[key] === undefined) {
+                delete this[key];
+            }
+        });
+        Object.freeze(this);
+    }
+}
+
 module.exports = {
+    GetDTO,
     InsertDTO,
     LoginRequestDTO,
     LoginResponseDTO,
     RegisterRequestDTO,
-    GetDTO,
+    UpdateProfileRequestDTO,
 };

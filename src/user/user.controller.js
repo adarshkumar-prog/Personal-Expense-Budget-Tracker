@@ -50,10 +50,43 @@ class UserController {
         }
     }
 
+    async updateProfile(req, res, next) {
+        try {
+            const user = req.user;
+            const updateData = new this.dto.UpdateProfileRequestDTO({ ...req.body });
+            const response = await this.service.updateProfile( user, updateData );
+            return res.status(200).json(new this.dto.GetDTO(response.data));
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async changeEmailRequest(req, res, next) {
+        try {
+            const user = req.user;
+            const response = await this.service.changeEmailRequest( user );
+            return res.status(200).json(response);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async changeEmail(req, res, next) {
+        try {
+            const user = req.user;
+            const { newEmail, otp } = req.body;
+            const response = await this.service.changeEmail( user, newEmail, otp );
+            return res.status(200).json(new this.dto.GetDTO(response.data));
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
     async changePassword(req, res, next) {
         try {
             const user = req.user;
             const { oldPassword, newPassword } = req.body;
+            console.log('oldPassword, newPassword', oldPassword, newPassword);
             const response = await this.service.changePassword( user, oldPassword, newPassword );
             return res.status(200).json(response.data.name + ' Your password has been changed successfully');
         } catch(error) {
