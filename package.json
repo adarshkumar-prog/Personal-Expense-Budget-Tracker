@@ -15,8 +15,10 @@
     "dotenv": "^17.2.3",
     "expo-server-sdk": "^4.0.0",
     "express": "^5.2.1",
+    "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.0.0",
+    "nodemailer": "^7.0.12",
     "nodemon": "^3.1.11",
     "pdfkit": "^0.17.2",
     "twilio": "^5.11.1"

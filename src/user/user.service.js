@@ -2,14 +2,16 @@ const mongoose = require('mongoose');
 const userModel = require('./user.models');
 const userTokenModel = require('./user.userTokenModel');
 const  { sendSMS } = require('../notification/index');
+const { sendOtpEmail } = require('../email/index');
 const autoBind = require('auto-bind');
 
 
 class UserService {
-    constructor( userModel, userTokenModel, sendSMS ) {
+    constructor( userModel, userTokenModel, sendSMS, sendOtpEmail ) {
         this.userModel = userModel;
         this.userTokenModel = userTokenModel;
         this.sendSMS = sendSMS;
+        this.sendOtpEmail = sendOtpEmail;
         autoBind(this);
     }
 
@@ -182,6 +184,46 @@ class UserService {
         }
     }
 
+    async sendEmailOtp( email ) {
+        try {
+            const { data } = await this.findByEmail( email );
+            if( !data ) {
+                throw new Error('User not found');
+            }
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+            data.emailVerificationOtp = otp;
+            data.emailVerificationOtpExpiry = otpExpiry;
+            await data.save();
+            await sendOtpEmail(data.email, otp);
+            return { 'message': 'OTP has been sent to your emailId'};
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async verifyEmail( email, otp ) {
+        try {
+            const { data } = await this.findByEmail( email );
+            if( !data ) {
+                throw new Error('User not found');
+            }
+            if( data.emailVerificationOtp !== otp ) {
+                throw new Error('Invalid OTP');
+            }
+            if( data.emailVerificationOtpExpiry < new Date() ) {
+                throw new Error('OTP has expired');
+            }
+            data.emailVerified = true;
+            data.emailVerificationOtp = null;
+            data.emailVerificationOtpExpiry = null;
+            await data.save();
+            return { 'message': 'Email verified successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async logout(token) {
         try {
             const tokenData = await this.userTokenModel.findOneAndDelete({ token: token });
@@ -193,4 +235,4 @@ class UserService {
     }
 }
 
-module.exports = new UserService( userModel, userTokenModel, { sendSMS } );
+module.exports = new UserService( userModel, userTokenModel, { sendSMS }, { sendOtpEmail } );

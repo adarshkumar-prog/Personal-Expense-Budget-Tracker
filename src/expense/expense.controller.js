@@ -28,9 +28,9 @@ class ExpenseController {
     }
   }
 
-  async getMonthlyExpenses(req, res, next) {
+  async MonthlyExpenses(req, res, next) {
     try {
-        const response = await this.service.getMonthlyExpenses( req.user.id, req.body.month, req.body.year );
+        const response = await this.service.MonthlyExpenses( req.user.id, req.body.month, req.body.year );
         return res.status(200).json(response);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -53,6 +53,86 @@ class ExpenseController {
     next(error);
   }
 }
+
+  async exportExpensesToCSV(req, res, next) {
+  try {
+    const response = await this.service.exportExpensesToCSV(req.user.id);
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="expenses.csv"'
+    );
+
+    return res.status(200).send(response.data);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+
+  async HighestSpendingMonth(req, res, next) {
+    try {
+      const year = req.query.year;
+        const response = await this.service.HighestSpendingMonth( req.user.id, year );
+        return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async LowestSpendingMonth(req, res, next) {
+    try {
+        const year = req.query.year;
+        const response = await this.service.LowestSpendingMonth( req.user.id, year );
+        return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async AverageMonthlyExpense(req, res, next) {
+    try {
+        const year = req.query.year;
+        const month = req.query.month;
+        const response = await this.service.AverageMonthlyExpense( req.user.id, year, month );
+        return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async MonthlyExpenseAmount(req, res, next) {
+    try {
+        const response = await this.service.MonthlyExpenseAmount( req.user.id, req.body.year, req.body.month );
+        return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async ExpenseTrend(req, res, next) {
+    try {
+      const month = req.body.month || 6;
+      const startDate = new Date();
+      const endDate = new Date();
+      startDate.setMonth(endDate.getMonth() - month + 1);
+      startDate.setDate(1);
+      const response = await this.service.ExpenseTrend(req.user.id, startDate, endDate);
+      return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async CategorySummary(req, res, next) {
+    try {
+      const response = await this.service.CategorySummary(req.user.id, req.body.month, req.body.year);    
+      return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
   async updateExpense(req, res, next) {
     try {
         const response = await this.service.updateExpense( req.params.id, new this.dto.AddExpenseRequestDTO({ ...req.body, userId: req.user.id }) );

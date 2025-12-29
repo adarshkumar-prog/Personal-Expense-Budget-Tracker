@@ -10,11 +10,11 @@ const userSchema = new Schema({
     'name': {
         type: String,
         required: true,
-        unique: true,
     },
     'email': {
         type: String,
         required: true,
+        lowercase: true,
         unique: true,
     },
     'password': {
@@ -34,7 +34,19 @@ const userSchema = new Schema({
     },
     'expoPushToken': {
         type: String,
-    }
+    },
+    'emailVerified': {
+        type: Boolean,
+        default: false,
+    },
+    'emailVerificationOtp': {
+        type: String,
+        default: null,
+    },
+    'emailVerificationOtpExpiry': {
+        type: Date,
+        default: null,
+    },
 }, { 'timestamps': true });
 
 userSchema.statics.generateToken = async function( user ) {

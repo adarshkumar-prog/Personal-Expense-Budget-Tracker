@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const PDFDocument = require("pdfkit");
+const { Parser } = require("json2csv");
 const ExpenseModel = require("../expense/expense.model");
 const userModel = require("../user/user.models");
 const budgetModel = require("../budget/budget.model");
@@ -73,7 +74,7 @@ class ExpenseService {
     }
   }
 
-  async getMonthlyExpenses(userId, month, year) {
+  async MonthlyExpenses(userId, month, year) {
     try {
       const expenses = await this.expenseModel
         .find({ userId, month, year })
@@ -82,6 +83,40 @@ class ExpenseService {
         count: expenses.length,
         data: expenses,
         message: "Monthly expenses fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async MonthlyExpenseAmount(userId, year, month) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+            month: String(month),
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]);
+
+      const totalAmount =
+        result.length > 0 ? result[0].totalAmount : 0;
+
+      return {
+        data: {
+          year: Number(year),
+          month: Number(month),
+          totalAmount: totalAmount,
+        },
+        message: "Monthly expense amount fetched successfully",
       };
     } catch (error) {
       throw error;
@@ -177,6 +212,241 @@ doc.moveDown();
     });
 
     return { data: pdfBuffer };
+  }
+
+  async exportExpensesToCSV(userId) {
+  try {
+    const expenses = await this.expenseModel.find(
+      { userId },
+      {
+        amount: 1,
+        category: 1,
+        description: 1,
+        createdAt: 1,
+        _id: 0,
+      }
+    ).lean();
+
+    if (!expenses.length) {
+      return {
+        data: "",
+        message: "No expenses found",
+      };
+    }
+
+    const formattedExpenses = expenses.map(exp => ({
+      date: exp.createdAt.toISOString().split("T")[0],
+      category: exp.category,
+      description: exp.description || "",
+      amount: exp.amount,
+    }));
+
+    const parser = new Parser({
+      fields: ["date", "category", "description", "amount"],
+    });
+
+    const csv = parser.parse(formattedExpenses);
+
+    return {
+      data: csv,
+      message: "Expenses exported successfully",
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+  async HighestSpendingMonth(userId, year) {
+  try {
+    const result = await this.expenseModel.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          year: Number(year),
+        },
+      },
+      {
+        $group: {
+          _id: { month: "$month", year: "$year" },
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+      { $sort: { totalAmount: -1 } },
+      { $limit: 1 },
+    ]);
+
+    if (result.length === 0) {
+      return {
+        data: null,
+        message: "No expenses found for the user",
+      };
+    }
+
+    const highestSpending = result[0];
+
+    return {
+      data: {
+        month: highestSpending._id.month,
+        year: highestSpending._id.year,
+        totalAmount: highestSpending.totalAmount,
+      },
+      message: "Highest spending month fetched successfully",
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+async LowestSpendingMonth(userId, year) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+          },
+        },
+        {
+          $group: {
+            _id: { month: "$month", year: "$year" },
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        { $sort: { totalAmount: 1 } },
+        { $limit: 1 },
+      ]);
+
+      if (result.length === 0) {
+        return {
+          data: null,
+          message: "No expenses found for the user",
+        };
+      }
+
+      const lowestSpending = result[0];
+
+      return {
+        data: {
+          month: lowestSpending._id.month,
+          year: lowestSpending._id.year,
+          totalAmount: lowestSpending.totalAmount,
+        },
+        message: "Lowest spending month fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async AverageMonthlyExpense(userId, year) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            year: Number(year),
+          },
+        },
+        {
+          $group: {
+            _id: "$month",
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            averageAmount: { $avg: "$totalAmount" },
+          },
+        },
+      ]);
+
+      if (result.length === 0) {
+        return {
+          data: null,
+          message: "No expenses found for the user",
+        };
+      }
+
+      return {
+        data: {
+          averageAmount: result[0].averageAmount,
+        },
+        message: "Average monthly expense fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async ExpenseTrend(userId, startDate, endDate) {
+  const expenses = await this.expenseModel.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+        createdAt: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+        },
+        totalAmount: { $sum: "$amount" },
+      },
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.month": 1,
+      },
+    },
+  ]);
+
+  const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December",
+  ];
+
+  return expenses.map(e => ({
+    year: e._id.year,
+    month: monthNames[e._id.month - 1],
+    totalAmount: e.totalAmount,
+  }));
+}
+
+  async CategorySummary(userId, month, year) {
+    try {
+      const result = await this.expenseModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            month: String(month),
+            year: Number(year),
+          },
+        },
+        {
+          $group: {
+            _id: "$category",
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]);
+
+      return {
+        data: result.map(r => ({
+          category: r._id,
+          totalAmount: r.totalAmount,
+        })),
+        message: "Category summary fetched successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async updateExpense(expenseId, expenseDTO) {

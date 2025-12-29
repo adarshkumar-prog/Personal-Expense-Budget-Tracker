@@ -11,5 +11,7 @@ router.get('/getProfile', userController.checkLogin, userController.getProfile);
 router.post('/changePassword', userController.checkLogin, userController.changePassword);
 router.post('/request-password-reset', userController.requestPasswordReset);
 router.post('/reset-password', userController.resetPassword);
+router.post('/send-email-otp', userController.sendEmailOtp);
+router.post('/verify-email', userController.verifyEmail);
 
 module.exports = router;

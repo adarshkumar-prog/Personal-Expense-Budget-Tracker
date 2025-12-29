@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/setBudget', userController.checkLogin, budgetController.setBudget);
 router.get('/getBudget', userController.checkLogin, budgetController.getBudget);
 router.put('/addMoreBudget/:id', userController.checkLogin, budgetController.addMoreBudget);
+router.get('/get-budget-usage-by-month', userController.checkLogin, budgetController.BudgetUsageByMonth);
 router.delete('/deleteBudget/:id', userController.checkLogin, budgetController.deleteBudget);
 
 module.exports = router;
