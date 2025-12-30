@@ -29,6 +29,16 @@ class UserController {
         }
     }
 
+    async refreshToken(req, res, next) {
+        try {
+            const { refreshToken } = req.body;
+            const response = await this.service.refreshToken( refreshToken );
+            return res.status(200).json(response);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
     async savePushToken(req, res, next) {
         try {
             const userId = req.user.id;
@@ -129,6 +139,9 @@ class UserController {
                 next();
             }
         } catch (error) {
+            if(error.message === 'UNAUTHORIZED_ERROR') {
+                res.status(401).json({ message: 'Unauthorized' });
+            }
             res.status(400).json({ message: error.message });
         }
     }

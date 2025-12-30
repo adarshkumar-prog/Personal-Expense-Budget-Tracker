@@ -11,7 +11,16 @@ const userTokenSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'user',
         required: true,
-    }
+    },
+    'expiresAt': {
+        type: Date,
+        default: () => new Date(+new Date() + 7*24*60*60*1000),
+    },
+}, { 'timestamps': true });
+
+userTokenSchema.pre('save', async function() {
+    if( this.expiresAt ) return;
+    this.expiresAt = new Date(+new Date() + 7*24*60*60*1000);
 });
 const userTokenModel = mongoose.model('UserToken', userTokenSchema);
 

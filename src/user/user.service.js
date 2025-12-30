@@ -48,13 +48,43 @@ class UserService {
                 if( !passwordMatch ) {
                     throw new Error('Invalid password');
                 } else {
-                    const token = await this.userModel.generateToken( user );
-                    await this.userTokenModel.create({ token, userId: user._id });
-                    return { 'data' : { 'token' : token }, 'message' : 'Login successful' };
+                    const accessToken = await this.userModel.generateAccessToken( user );
+                    const refreshToken = await this.userModel.generateRefreshToken( user );
+                    await this.userTokenModel.deleteMany({ userId: user._id });
+                    await this.userTokenModel.create({ token: refreshToken, userId: user._id });
+                    return { 'data' : { 'accessToken' : accessToken, 'refreshToken' : refreshToken }, 'message' : 'Login successful' };
                 }
             } catch (error) {
                 throw error;
             }
+        }
+    }
+
+    async refreshToken( refreshToken ) {
+        try {
+            const decoded = await this.userModel.decodeRefreshToken( refreshToken );
+            if( !decoded ) {
+                throw new Error('Invalid refresh token');
+            }
+            const tokenData = await this.userTokenModel.findOne({ token: refreshToken });
+            if( !tokenData ) {
+                throw new Error('Refresh token not found');
+            }
+            if( tokenData.expiresAt < new Date() ) {
+                throw new Error('Refresh token has expired');
+            }
+            const user = await this.userModel.findById( decoded.id );
+            if( !user ) {
+                throw new Error('User not found');
+            }
+            const newAccessToken = await this.userModel.generateAccessToken( user );
+            const newRefreshToken = await this.userModel.generateRefreshToken( user );
+            tokenData.token = newRefreshToken;
+            tokenData.expiresAt = new Date(+new Date() + 7*24*60*60*1000);
+            await tokenData.save();
+            return { 'data' : { 'accessToken' : newAccessToken, 'refreshToken' : newRefreshToken }, 'message' : 'Token refreshed successfully' };
+        } catch (error) {
+            throw error;
         }
     }
     async savePushToken ( userId, pushToken ) {
@@ -227,16 +257,8 @@ class UserService {
 
     async checkLogin( token ) {
         try {
-            const tokenInDB = await this.userTokenModel.countDocuments({ token: token });
-            if( !tokenInDB ) {
-                throw new Error('Invalid token');
-            }
-            const user = await this.userModel.decodeToken( token );
+            const user = await this.userModel.decodeAccessToken( token );
             if(!user) {
-                throw new Error('UNAUTHORIZED_ERROR');
-            }
-            const tokenData = await this.userTokenModel.findOne({ token: token });
-            if(tokenData.userId.toString() !== user.id) {
                 throw new Error('UNAUTHORIZED_ERROR');
             }
             return user;
@@ -268,6 +290,9 @@ class UserService {
             const { data } = await this.findByEmail( email );
             if( !data ) {
                 throw new Error('User not found');
+            }
+            if(data.emailVerified) {
+                throw new Error('Email already verified');
             }
             if( data.emailVerificationOtp !== otp ) {
                 throw new Error('Invalid OTP');
