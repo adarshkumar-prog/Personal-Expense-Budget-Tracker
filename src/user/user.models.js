@@ -3,7 +3,8 @@ const { Schema } = mongoose;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { config } = require('../../config/config');
-const jwtKey = config.JWT_SECRET;
+const jwtAccessKey = config.JWT_SECRET;
+const jwtRefreshKey = config.JWT_REFRESH_SECRET;
 
 
 const userSchema = new Schema({
@@ -49,21 +50,39 @@ const userSchema = new Schema({
     },
 }, { 'timestamps': true });
 
-userSchema.statics.generateToken = async function( user ) {
+userSchema.statics.generateAccessToken = async function( user ) {
     try {
         return await jwt.sign( {
             id: user._id,
             email: user.email,
             name: user.name,
-        }, jwtKey, { 'expiresIn': '1d' } );
+        }, jwtAccessKey, { 'expiresIn': '1h' } );
     } catch (error) {
         throw error;
     }
 }
 
-userSchema.statics.decodeToken = async function( token ) {
+userSchema.statics.generateRefreshToken = async function( user ) {
     try {
-        return await jwt.verify( token, jwtKey );
+        return await jwt.sign( {
+            id: user._id,
+        }, jwtRefreshKey, { 'expiresIn': '7d' } );
+    } catch (error) {
+        throw error;
+    }
+}
+
+userSchema.statics.decodeAccessToken = async function( token ) {
+    try {
+        return await jwt.verify( token, jwtAccessKey );
+    } catch (error) {
+        throw error;
+    }
+}
+
+userSchema.statics.decodeRefreshToken = async function(token) {
+    try {
+        return await jwt.verify(token, jwtRefreshKey);
     } catch (error) {
         throw error;
     }
