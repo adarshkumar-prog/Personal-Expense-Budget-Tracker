@@ -27,6 +27,15 @@ const userSchema = new Schema({
         required: true,
         unique: true,
     },
+    'active' : {
+        type: Boolean,
+        enum: [true, false],
+        default: true,
+    },
+    'tokenVersion': {
+        type: Number,
+        default: 0,
+    },
     'otp': {
         type: String,
     },
@@ -50,21 +59,22 @@ const userSchema = new Schema({
     },
 }, { 'timestamps': true });
 
-userSchema.statics.generateAccessToken = async function( user ) {
+userSchema.statics.generateAccessToken = function( user ) {
     try {
-        return await jwt.sign( {
+        return jwt.sign( {
             id: user._id,
             email: user.email,
             name: user.name,
+            tv: user.tokenVersion
         }, jwtAccessKey, { 'expiresIn': '1h' } );
     } catch (error) {
         throw error;
     }
 }
 
-userSchema.statics.generateRefreshToken = async function( user ) {
+userSchema.statics.generateRefreshToken = function( user ) {
     try {
-        return await jwt.sign( {
+        return jwt.sign( {
             id: user._id,
         }, jwtRefreshKey, { 'expiresIn': '7d' } );
     } catch (error) {
@@ -74,7 +84,7 @@ userSchema.statics.generateRefreshToken = async function( user ) {
 
 userSchema.statics.decodeAccessToken = async function( token ) {
     try {
-        return await jwt.verify( token, jwtAccessKey );
+        return jwt.verify( token, jwtAccessKey );
     } catch (error) {
         throw error;
     }
@@ -82,7 +92,7 @@ userSchema.statics.decodeAccessToken = async function( token ) {
 
 userSchema.statics.decodeRefreshToken = async function(token) {
     try {
-        return await jwt.verify(token, jwtRefreshKey);
+        return jwt.verify(token, jwtRefreshKey);
     } catch (error) {
         throw error;
     }

@@ -27,6 +27,7 @@ class RegisterRequestDTO {
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.name = props.name;
         this.phone = props.phone;
+        this.active = props.active;
         this.password = props.password;
         this.otp = props.otp;
         this.otpExpiry = props.otpExpiry;
@@ -45,6 +46,9 @@ class GetDTO {
         this.id = props.id;
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.name = props.name;
+        this.phone = props.phone;
+        this.active = props.active;
+        this.emailVerified = props.emailVerified;
         Object.freeze(this);
     }
 }
