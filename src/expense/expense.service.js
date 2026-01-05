@@ -113,7 +113,7 @@ class ExpenseService {
       return {
         data: {
           year: Number(year),
-          month: Number(month),
+          month: String(month),
           totalAmount: totalAmount,
         },
         message: "Monthly expense amount fetched successfully",

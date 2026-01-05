@@ -99,7 +99,6 @@ class UserController {
     try {
       const user = req.user;
       const { oldPassword, newPassword } = req.body;
-      console.log("oldPassword, newPassword", oldPassword, newPassword);
       const response = await this.service.changePassword(
         user,
         oldPassword,
