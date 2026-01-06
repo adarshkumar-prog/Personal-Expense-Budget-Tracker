@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { config } = require('../../config/config');
 const jwtAccessKey = config.JWT_SECRET;
 const jwtRefreshKey = config.JWT_REFRESH_SECRET;
+const jwt2FASecret = config.JWT_2FA_SECRET;
 
 
 const userSchema = new Schema({
@@ -49,6 +50,18 @@ const userSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    'twoFactorEnabled': {
+        type: Boolean,
+        default: false,
+    },
+    'twoFactorSecret': {
+        type: String,
+        default: null,
+    },
+    'tempTwoFactorSecret': {
+        type: String,
+        default: null,
+    },
     'emailVerificationOtp': {
         type: String,
         default: null,
@@ -77,6 +90,29 @@ userSchema.statics.generateRefreshToken = function( user ) {
         return jwt.sign( {
             id: user._id,
         }, jwtRefreshKey, { 'expiresIn': '7d' } );
+    } catch (error) {
+        throw error;
+    }
+}
+
+userSchema.statics.generateTemp2FAToken = function( user ) {
+    try {
+        return jwt.sign( {
+            id: user._id,
+            type: '2fa'
+        }, jwt2FASecret, { 'expiresIn': '5m' } );
+    } catch (error) {
+        throw error;
+    }
+}
+
+userSchema.statics.verifyTemp2FAToken = function (token) {
+    try {
+        const decoded = jwt.verify(token, jwt2FASecret);
+        if (decoded.type !== '2fa') {
+            throw new Error('Invalid token type');
+        }
+        return decoded.id;
     } catch (error) {
         throw error;
     }

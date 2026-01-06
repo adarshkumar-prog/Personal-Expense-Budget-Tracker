@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const speakEasy = require("speakeasy");
+const Qrcode = require("qrcode");
 const userModel = require("./user.models");
 const userTokenModel = require("./user.userTokenModel");
 const expenseModel = require("../expense/expense.model");
@@ -54,19 +56,30 @@ class UserService {
         if (!passwordMatch) {
           throw new Error("Invalid password");
         } else {
-          user.tokenVersion += 1;
-          await user.save();
-          const accessToken = await this.userModel.generateAccessToken(user);
-          const refreshToken = await this.userModel.generateRefreshToken(user);
-          await this.userTokenModel.deleteMany({ userId: user._id });
-          await this.userTokenModel.create({
-            token: refreshToken,
-            userId: user._id,
-          });
-          return {
-            data: { accessToken: accessToken, refreshToken: refreshToken },
-            message: "Login successful",
-          };
+          if (!user.twoFactorEnabled) {
+            user.tokenVersion += 1;
+            await user.save();
+            const accessToken = await this.userModel.generateAccessToken(user);
+            const refreshToken = await this.userModel.generateRefreshToken(
+              user
+            );
+            await this.userTokenModel.deleteMany({ userId: user._id });
+            await this.userTokenModel.create({
+              token: refreshToken,
+              userId: user._id,
+            });
+            return {
+              data: { accessToken: accessToken, refreshToken: refreshToken },
+              message: "Login successful",
+            };
+          }
+          else {
+            const temp2FAToken = this.userModel.generateTemp2FAToken(user);
+            return {
+              data: { twoFactorRequired: true, temp2FAToken: temp2FAToken },
+              message: "Two-factor authentication required",
+            };
+          }
         }
       } catch (error) {
         throw error;
@@ -74,55 +87,181 @@ class UserService {
     }
   }
 
-async refreshToken(refreshToken) {
-  try {
-    const decoded = await this.userModel.decodeRefreshToken(refreshToken);
-    const tokenDoc = await this.userTokenModel.findOne({
-      token: refreshToken,
-      userId: decoded.id,
-    });
-
-    if (!tokenDoc) {
-      throw new Error("REFRESH_TOKEN_REUSED_OR_INVALID");
-    }
-
-    if (tokenDoc.expiresAt < new Date()) {
-      await this.userTokenModel.deleteMany({ userId: decoded.id });
-      throw new Error("REFRESH_TOKEN_EXPIRED");
-    }
-
-    const user = await this.userModel.findById(decoded.id);
-
-    if (!user) {
-      await this.userTokenModel.deleteMany({ userId: decoded.id });
-      throw new Error("USER_NOT_FOUND");
-    }
-
-    if (user.isActive === false) {
-      throw new Error("ACCOUNT_DEACTIVATED");
-    }
-    const newAccessToken = this.userModel.generateAccessToken(user);
-    const newRefreshToken = this.userModel.generateRefreshToken(user);
-
-    await this.userTokenModel.updateOne(
-      { _id: tokenDoc._id },
-      {
-        token: newRefreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  async verifyTwoFactorLogin(temp2FAToken, otp) {
+    try {
+      const userId = this.userModel.verifyTemp2FAToken(temp2FAToken);
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
       }
-    );
-
-    return {
-      data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      },
-      message: "Token refreshed successfully",
-    };
-  } catch (error) {
-    throw error;
+      if (!user.twoFactorEnabled) {
+        throw new Error("Two-factor authentication is not enabled");
+      }
+      const verified = speakEasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: "base32",
+        token: otp,
+        window: 1,
+      });
+      if (!verified) {
+        throw new Error("Invalid OTP");
+      }
+      user.tokenVersion += 1;
+      await user.save();
+      const accessToken = await this.userModel.generateAccessToken(user);
+      const refreshToken = await this.userModel.generateRefreshToken(user);
+      await this.userTokenModel.deleteMany({ userId: user._id });
+      await this.userTokenModel.create({
+        token: refreshToken,
+        userId: user._id,
+      });
+      return {
+        data: { accessToken: accessToken, refreshToken: refreshToken },
+        message: "Login successful",
+      };
+    } catch (error) {
+      throw error;
+    }
   }
-}
+
+  async enableTwoFactorAuth(user) {
+    try {
+      const userData = await this.userModel.findById(user.id);
+      console.log(userData);
+      if (!userData) {
+        throw new Error("User not found");
+      }
+      if (userData.twoFactorEnabled) {
+        throw new Error("Two-factor authentication is already enabled");
+      }
+      const secret = speakEasy.generateSecret({
+        name: `ExpenseTracker (${userData.email})`,
+      });
+      userData.tempTwoFactorSecret = secret.base32;
+      await userData.save();
+      const qrcode = await Qrcode.toDataURL(secret.otpauth_url);
+      return {
+        data: { qrcode: qrcode, secret: secret.base32 },
+        message: "Two-factor authentication setup initiated",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyTwoFactorAuth(user, otp) {
+    try {
+      const userData = await this.userModel.findById(user.id);
+      if (!userData) {
+        throw new Error("User not found");
+      }
+      if (userData.twoFactorEnabled) {
+        throw new Error("Two-factor authentication is already enabled");
+      }
+      if (!userData.tempTwoFactorSecret) {
+        throw new Error("Two-factor authentication setup not initiated");
+      }
+      const verified = speakEasy.totp.verify({
+        secret: userData.tempTwoFactorSecret,
+        encoding: "base32",
+        token: otp,
+        window: 1,
+      });
+      if (!verified) {
+        throw new Error("Invalid OTP");
+      }
+      userData.twoFactorEnabled = true;
+      userData.twoFactorSecret = userData.tempTwoFactorSecret;
+      userData.tempTwoFactorSecret = null;
+      await userData.save();
+      return {
+        data: userData.toJSON(),
+        message: "Two-factor authentication enabled successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async disableTwoFactorAuth(user, otp) {
+    try {
+      const userData = await this.userModel.findById(user.id);
+      if (!userData) {
+        throw new Error("User not found");
+      }
+      if (!userData.twoFactorEnabled) {
+        throw new Error("Two-factor authentication is not enabled");
+      }
+      const verified = speakEasy.totp.verify({
+        secret: userData.twoFactorSecret,
+        encoding: "base32",
+        token: otp,
+        window: 1,
+      });
+      if (!verified) {
+        throw new Error("Invalid OTP");
+      }
+      userData.twoFactorEnabled = false;
+      userData.twoFactorSecret = null;
+      await userData.save();
+      return {
+        data: userData.toJSON(),
+        message: "Two-factor authentication disabled successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async refreshToken(refreshToken) {
+    try {
+      const decoded = await this.userModel.decodeRefreshToken(refreshToken);
+      const tokenDoc = await this.userTokenModel.findOne({
+        token: refreshToken,
+        userId: decoded.id,
+      });
+
+      if (!tokenDoc) {
+        throw new Error("REFRESH_TOKEN_REUSED_OR_INVALID");
+      }
+
+      if (tokenDoc.expiresAt < new Date()) {
+        await this.userTokenModel.deleteMany({ userId: decoded.id });
+        throw new Error("REFRESH_TOKEN_EXPIRED");
+      }
+
+      const user = await this.userModel.findById(decoded.id);
+
+      if (!user) {
+        await this.userTokenModel.deleteMany({ userId: decoded.id });
+        throw new Error("USER_NOT_FOUND");
+      }
+
+      if (user.isActive === false) {
+        throw new Error("ACCOUNT_DEACTIVATED");
+      }
+      const newAccessToken = this.userModel.generateAccessToken(user);
+      const newRefreshToken = this.userModel.generateRefreshToken(user);
+
+      await this.userTokenModel.updateOne(
+        { _id: tokenDoc._id },
+        {
+          token: newRefreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        }
+      );
+
+      return {
+        data: {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        },
+        message: "Token refreshed successfully",
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async savePushToken(userId, pushToken) {
     try {

@@ -29,6 +29,48 @@ class UserController {
     }
   }
 
+  async verifyTwoFactorLogin(req, res, next) {
+    try {
+      const { temp2FAToken, otp } = req.body;
+      const response = await this.service.verifyTwoFactorLogin(temp2FAToken, otp);
+      return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async enableTwoFactorAuth(req, res, next) {
+    try {
+      const user = req.user;
+      const response = await this.service.enableTwoFactorAuth(user);
+      return res.status(200).json(response.data);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async verifyTwoFactorAuth(req, res, next) {
+    try {
+      const user = req.user;
+      const { otp } = req.body;
+      const response = await this.service.verifyTwoFactorAuth(user, otp);
+      return res.status(200).json(new this.dto.GetDTO(response.data));
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async disableTwoFactorAuth(req, res, next) {
+    try {
+      const user = req.user;
+      const { otp } = req.body;
+      const response = await this.service.disableTwoFactorAuth(user, otp);
+      return res.status(200).json(new this.dto.GetDTO(response.data));
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
   async refreshToken(req, res, next) {
     try {
       const { refreshToken } = req.body;
