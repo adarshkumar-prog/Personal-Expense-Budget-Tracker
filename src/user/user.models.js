@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { config } = require('../../config/config');
 const jwtAccessKey = config.JWT_SECRET;
 const jwtRefreshKey = config.JWT_REFRESH_SECRET;
+const jwt2FASecret = config.JWT_2FA_SECRET;
 
 
 const userSchema = new Schema({
@@ -27,6 +28,15 @@ const userSchema = new Schema({
         required: true,
         unique: true,
     },
+    'active' : {
+        type: Boolean,
+        enum: [true, false],
+        default: true,
+    },
+    'tokenVersion': {
+        type: Number,
+        default: 0,
+    },
     'otp': {
         type: String,
     },
@@ -40,6 +50,18 @@ const userSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    'twoFactorEnabled': {
+        type: Boolean,
+        default: false,
+    },
+    'twoFactorSecret': {
+        type: String,
+        default: null,
+    },
+    'tempTwoFactorSecret': {
+        type: String,
+        default: null,
+    },
     'emailVerificationOtp': {
         type: String,
         default: null,
@@ -50,21 +72,22 @@ const userSchema = new Schema({
     },
 }, { 'timestamps': true });
 
-userSchema.statics.generateAccessToken = async function( user ) {
+userSchema.statics.generateAccessToken = function( user ) {
     try {
-        return await jwt.sign( {
+        return jwt.sign( {
             id: user._id,
             email: user.email,
             name: user.name,
+            tv: user.tokenVersion
         }, jwtAccessKey, { 'expiresIn': '1h' } );
     } catch (error) {
         throw error;
     }
 }
 
-userSchema.statics.generateRefreshToken = async function( user ) {
+userSchema.statics.generateRefreshToken = function( user ) {
     try {
-        return await jwt.sign( {
+        return jwt.sign( {
             id: user._id,
         }, jwtRefreshKey, { 'expiresIn': '7d' } );
     } catch (error) {
@@ -72,9 +95,32 @@ userSchema.statics.generateRefreshToken = async function( user ) {
     }
 }
 
+userSchema.statics.generateTemp2FAToken = function( user ) {
+    try {
+        return jwt.sign( {
+            id: user._id,
+            type: '2fa'
+        }, jwt2FASecret, { 'expiresIn': '5m' } );
+    } catch (error) {
+        throw error;
+    }
+}
+
+userSchema.statics.verifyTemp2FAToken = function (token) {
+    try {
+        const decoded = jwt.verify(token, jwt2FASecret);
+        if (decoded.type !== '2fa') {
+            throw new Error('Invalid token type');
+        }
+        return decoded.id;
+    } catch (error) {
+        throw error;
+    }
+}
+
 userSchema.statics.decodeAccessToken = async function( token ) {
     try {
-        return await jwt.verify( token, jwtAccessKey );
+        return jwt.verify( token, jwtAccessKey );
     } catch (error) {
         throw error;
     }
@@ -82,7 +128,7 @@ userSchema.statics.decodeAccessToken = async function( token ) {
 
 userSchema.statics.decodeRefreshToken = async function(token) {
     try {
-        return await jwt.verify(token, jwtRefreshKey);
+        return jwt.verify(token, jwtRefreshKey);
     } catch (error) {
         throw error;
     }
