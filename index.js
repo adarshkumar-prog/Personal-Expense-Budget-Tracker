@@ -7,7 +7,7 @@ const budgetRoutes = require('./src/budget/budget.route');
 
 const app = express();
 const port = process.env.PORT || 5001;
-const MONGOURL = process.env.MONGODB_URL;
+const MONGOURL = process.env.MONGODB_URI;
 
 app.use(express.json());
 app.use('/users', userRoutes);
