@@ -127,7 +127,6 @@ class UserService {
   async enableTwoFactorAuth(user) {
     try {
       const userData = await this.userModel.findById(user.id);
-      console.log(userData);
       if (!userData) {
         throw new Error("User not found");
       }
@@ -240,8 +239,8 @@ class UserService {
       if (user.isActive === false) {
         throw new Error("ACCOUNT_DEACTIVATED");
       }
-      const newAccessToken = this.userModel.generateAccessToken(user);
-      const newRefreshToken = this.userModel.generateRefreshToken(user);
+      const newAccessToken = await this.userModel.generateAccessToken(user);
+      const newRefreshToken = await this.userModel.generateRefreshToken(user);
 
       await this.userTokenModel.updateOne(
         { _id: tokenDoc._id },
@@ -457,7 +456,7 @@ class UserService {
         throw new Error("UNAUTHORIZED_ERROR");
       }
       if (user.tv !== userInDB.tokenVersion) {
-        throw new Error("UNAUTHORIZED_ERROR");
+        throw new Error("FORBIDDEN");
       }
 
       return user;
@@ -585,6 +584,7 @@ class UserService {
         throw new Error("User not found");
       }
       userInDB.tokenVersion += 1;
+      await this.userTokenModel.deleteMany({ userId: user.id });
       await userInDB.save();
       return { data: userInDB.toJSON(), message: "Logout successful" };
     } catch (error) {

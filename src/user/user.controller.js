@@ -198,8 +198,8 @@ class UserController {
         next();
       }
     } catch (error) {
-      switch (error.code) {
-        case "UNAUTHORIZED":
+      switch (error.message) {
+        case "UNAUTHORIZED_ERROR":
           return res.status(401).json({ message: error.message });
 
         case "FORBIDDEN":
