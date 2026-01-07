@@ -6,7 +6,7 @@ const expenseRoutes = require('./src/expense/expense.route');
 const budgetRoutes = require('./src/budget/budget.route');
 
 const app = express();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5002;
 const MONGOURL = process.env.MONGODB_URI;
 
 app.use(express.json());
