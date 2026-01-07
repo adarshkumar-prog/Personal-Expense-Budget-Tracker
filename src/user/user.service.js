@@ -19,26 +19,21 @@ class UserService {
   }
 
   async register(data) {
+    const existingUser = await this.userModel.findOne({ email: data.email });
     try {
-      const email = data.email;
-      const { data: existingUser } = await this.findByEmail(email);
-      if (existingUser) {
-        throw new Error("User with this email already exists");
-      }
+      if (existingUser) throw new Error("User with this email already exists");
+
       const phoneExistingUser = await this.userModel.findOne({
         phone: data.phone,
       });
-      if (phoneExistingUser) {
+      if (phoneExistingUser)
         throw new Error("User with this phone number already exists");
-      }
+
       const userData = await this.userModel.create(data);
-      if (userData) {
-        return {
-          data: userData.toJSON(),
-          message: "User registered successfully",
-        };
-      }
-      throw new Error("User registration failed");
+      return {
+        data: userData.toJSON(),
+        message: "User registered successfully",
+      };
     } catch (error) {
       throw error;
     }
@@ -72,8 +67,7 @@ class UserService {
               data: { accessToken: accessToken, refreshToken: refreshToken },
               message: "Login successful",
             };
-          }
-          else {
+          } else {
             const temp2FAToken = this.userModel.generateTemp2FAToken(user);
             return {
               data: { twoFactorRequired: true, temp2FAToken: temp2FAToken },
