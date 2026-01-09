@@ -304,6 +304,32 @@ class UserService {
     }
   }
 
+  async addProfileImage(user, imageUrl, publicId = null) {
+  const userData = await this.userModel.findById(user.id);
+
+  if (!userData) {
+    throw new Error("User not found");
+  }
+
+  if (userData.profileImage?.publicId) {
+    await cloudinary.uploader.destroy(userData.profileImage.publicId);
+  }
+
+  userData.profileImage = {
+    url: imageUrl,
+    publicId,
+    uploadedAt: new Date()
+  };
+
+  await userData.save();
+
+  return {
+    data: userData,
+    message: "Profile image added successfully"
+  };
+}
+
+
   async changeEmailRequest(user) {
     try {
       const userData = await this.userModel.findById(user.id);
@@ -472,6 +498,21 @@ class UserService {
       await data.save();
       await sendOtpEmail(data.email, otp);
       return { message: "OTP has been sent to your emailId" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resendEmailOtp(email) {
+    try {
+      const { data } = await this.findByEmail(email);
+      if (!data) {
+        throw new Error("User not found");
+      }
+      if(data.emailVerified) {
+        throw new Error("Email is already verified");
+      }
+      return this.sendEmailOtp(email);
     } catch (error) {
       throw error;
     }

@@ -9,6 +9,8 @@ router.post('/2fa/login/verify', userController.verifyTwoFactorLogin);
 router.post('/token/refresh', userController.refreshToken);
 router.post('/push-token', userController.checkLogin, userController.isActive, userController.savePushToken);
 router.delete('/logout',userController.checkLogin, userController.isActive, userController.logout);
+router.post('/add-profile-image', userController.checkLogin, userController.isActive, userController.addProfileImage);
+//router.delete('/remove-profile-image', userController.checkLogin, userController.isActive, userController.removeProfileImage);
 router.delete('/logout-all', userController.checkLogin, userController.isActive, userController.logoutAllDevices);
 router.post('/2fa/enable', userController.checkLogin, userController.isActive, userController.enableTwoFactorAuth);
 router.post('/2fa/verify', userController.checkLogin, userController.isActive, userController.verifyTwoFactorAuth);
@@ -24,6 +26,7 @@ router.patch('/changePassword', userController.checkLogin, userController.isActi
 router.post('/request-password-reset', userController.requestPasswordReset);
 router.post('/reset-password', userController.resetPassword);
 router.post('/send-email-otp', userController.sendEmailOtp);
+router.post('/resend-email-otp', userController.resendEmailOtp);
 router.post('/verify-email', userController.verifyEmail);
 
 module.exports = router;

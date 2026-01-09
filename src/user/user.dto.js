@@ -47,6 +47,7 @@ class GetDTO {
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.name = props.name;
         this.phone = props.phone;
+        this.profileImage = props.profileImage;
         this.active = props.active;
         this.emailVerified = props.emailVerified;
         Object.freeze(this);

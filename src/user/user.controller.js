@@ -116,6 +116,29 @@ class UserController {
     }
   }
 
+  async addProfileImage(req, res) {
+  try {
+    const user = req.user;
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ message: "imageUrl is required" });
+    }
+
+    const response = await this.service.addProfileImage(
+      user,
+      imageUrl
+    );
+
+    return res.status(200).json(
+      new this.dto.GetDTO(response.data)
+    );
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}
+
+
   async changeEmailRequest(req, res, next) {
     try {
       const user = req.user;
@@ -215,6 +238,16 @@ class UserController {
     try {
       const { email } = req.body;
       const response = await this.service.sendEmailOtp(email);
+      return res.status(200).json(response);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async resendEmailOtp(req, res, next) {
+    try {
+      const { email } = req.body;
+      const response = await this.service.resendEmailOtp(email);
       return res.status(200).json(response);
     } catch (error) {
       res.status(400).json({ message: error.message });

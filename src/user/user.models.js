@@ -28,6 +28,20 @@ const userSchema = new Schema({
         required: true,
         unique: true,
     },
+    'profileImage': {
+        'url': {
+            type: String,
+            default: null,
+        },
+        'publicId': {
+            type: String,
+            default: null,
+        },
+        'createdAt': {
+            type: Date,
+            default: null,
+        },
+    },
     'active' : {
         type: Boolean,
         enum: [true, false],
